@@ -1,0 +1,116 @@
+{% extends "admin/base.html" %}
+{% block title %}Model management{% endblock %}
+{% block heading %}Model management{% endblock %}
+{% block subheading %}Deployed recommendation model, evaluation metrics and retraining requests{% endblock %}
+
+{% block content %}
+<section class="grid grid-2">
+  <article class="card">
+    <div class="card-head">
+      <h2>Currently deployed</h2>
+      {% if active_model %}<span class="badge badge-active">● Live</span>{% else %}<span class="badge badge-off">None</span>{% endif %}
+    </div>
+    <div class="card-body stack">
+      {% if active_model %}
+        <div class="row-between">
+          <div>
+            <h3 style="font-size:1.3rem">{{ active_model.version }}</h3>
+            <p class="small muted">{{ active_model.notes }}</p>
+          </div>
+          <div class="tiny muted" style="text-align:right">
+            trained {{ active_model.trained_at[:10] if active_model.trained_at else '—' }}<br>
+            activated {{ active_model.activated_at[:10] if active_model.activated_at else '—' }}
+          </div>
+        </div>
+        <div class="metric-grid">
+          {% for key, label in metric_labels.items() %}
+          <div class="metric">
+            <div class="metric-label">{{ label }}</div>
+            <div class="metric-value">{{ '%.2f'|format(active_model.metrics.get(key, 0)) }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="tiny muted">
+          Metrics are produced offline by the ML service during training and are read-only here.
+          Activating a version only flips which checkpoint the serving layer reads.
+        </p>
+      {% else %}
+        <div class="empty"><span class="empty-emoji">🤖</span>No model version has been activated.</div>
+      {% endif %}
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="card-head"><h2>Request retraining</h2></div>
+    <form class="card-body stack" method="post" action="/admin/models/retrain">
+      <div class="field">
+        <label for="notes">Why is a retrain needed?</label>
+        <textarea id="notes" name="notes" maxlength="280"
+                  placeholder="e.g. Refresh interaction histories after the September intake."></textarea>
+        <span class="hint">The request is queued for the ML service. Training never runs in the browser.</span>
+      </div>
+      <button class="btn" type="submit">Queue retraining job</button>
+    </form>
+  </article>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Model versions</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Version</th><th>Status</th><th>Precision@5</th><th>Recall@10</th><th>NDCG@10</th><th>Coverage</th><th>Trained</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for model in models %}
+        <tr>
+          <td><strong>{{ model.version }}</strong><br><small class="muted">{{ model.notes }}</small></td>
+          <td><span class="badge badge-{{ model.status }}">{{ model.status|capitalize }}</span></td>
+          <td class="numeric">{{ '%.2f'|format(model.metrics.get('precision_at_5', 0)) }}</td>
+          <td class="numeric">{{ '%.2f'|format(model.metrics.get('recall_at_10', 0)) }}</td>
+          <td class="numeric">{{ '%.2f'|format(model.metrics.get('ndcg_at_10', 0)) }}</td>
+          <td class="numeric">{{ '%.2f'|format(model.metrics.get('coverage', 0)) }}</td>
+          <td class="small muted">{{ model.trained_at[:10] if model.trained_at else '—' }}</td>
+          <td>
+            <div class="actions">
+              {% if model.status != 'active' %}
+              <form method="post" action="/admin/models/{{ model.version }}/activate"
+                    data-confirm="Activate {{ model.version }}? The currently live model will be archived.">
+                <button class="btn btn-soft btn-sm" type="submit">Activate</button>
+              </form>
+              {% else %}
+              <span class="small muted">In service</span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8"><div class="empty"><span class="empty-emoji">📦</span>No model versions registered.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Recent training jobs</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Job</th><th>Requested by</th><th>Status</th><th>Requested</th><th>Notes</th></tr></thead>
+      <tbody>
+        {% for job in jobs %}
+        <tr>
+          <td class="numeric small">{{ job.id }}</td>
+          <td class="small">{{ job.requested_by }}</td>
+          <td><span class="badge {{ 'badge-active' if job.status == 'completed' else 'badge-candidate' }}">{{ job.status|capitalize }}</span></td>
+          <td class="small muted">{{ job.requested_at[:16]|replace('T', ' ') }}</td>
+          <td class="small muted">{{ job.notes or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5"><div class="empty"><span class="empty-emoji">🧪</span>No retraining requests yet.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

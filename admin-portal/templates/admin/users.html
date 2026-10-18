@@ -1,0 +1,92 @@
+{% extends "admin/base.html" %}
+{% block title %}Parents & children{% endblock %}
+{% block heading %}Parents &amp; children{% endblock %}
+{% block subheading %}Every parent account and the child profiles attached to it{% endblock %}
+
+{% block content %}
+<section class="grid grid-3">
+  <article class="stat" style="--stat-tint: var(--mint-100)">
+    <div class="stat-label">Parent accounts</div>
+    <div class="stat-value">{{ totals.parents }}</div>
+  </article>
+  <article class="stat" style="--stat-tint: var(--sky-soft)">
+    <div class="stat-label">Child profiles</div>
+    <div class="stat-value">{{ totals.children }}</div>
+  </article>
+  <article class="stat" style="--stat-tint: var(--peach-soft)">
+    <div class="stat-label">Profiles per family</div>
+    <div class="stat-value">{{ totals.avg }}</div>
+  </article>
+</section>
+
+<section class="card">
+  <form class="toolbar" method="get" action="/admin/users">
+    <div class="search">
+      <input type="search" name="q" value="{{ q }}" placeholder="Search by e-mail or name…" aria-label="Search parents">
+    </div>
+    <select name="children" aria-label="Filter by child profiles" style="width:200px">
+      <option value="">All families</option>
+      <option value="with" {% if children_filter == 'with' %}selected{% endif %}>With child profiles</option>
+      <option value="without" {% if children_filter == 'without' %}selected{% endif %}>No child profiles</option>
+    </select>
+    <button class="btn btn-soft btn-sm" type="submit">Apply</button>
+    {% if q or children_filter %}<a class="btn btn-ghost btn-sm" href="/admin/users">Reset</a>{% endif %}
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Parent</th><th>Child profiles</th><th>Restrictions in place</th><th>Joined</th><th>Last active</th></tr>
+      </thead>
+      <tbody>
+        {% for parent in rows %}
+        <tr>
+          <td>
+            <div class="cell-title">
+              <div class="cell-emoji">{{ (parent.display_name or parent.email)[0]|upper }}</div>
+              <div>
+                <strong>{{ parent.display_name or '—' }}</strong>
+                <small>{{ parent.email }}</small>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="row wrap">
+              {% for child in parent.children %}
+                <span class="chip">{{ child.avatar }} {{ child.name }} · {{ child.age }} · {{ child.age_band }}</span>
+              {% else %}
+                <span class="small muted">No profiles yet</span>
+              {% endfor %}
+            </div>
+          </td>
+          <td>
+            <div class="row wrap">
+              {% for child in parent.children %}
+                {% if child.blocked_categories %}
+                  {% for category in child.blocked_categories %}
+                    <span class="chip chip-warn">{{ child.name }}: {{ category }}</span>
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+              {% if parent.children and parent.children|selectattr('blocked_categories')|list|length == 0 %}
+                <span class="small muted">None</span>
+              {% endif %}
+              {% if not parent.children %}<span class="small muted">—</span>{% endif %}
+            </div>
+          </td>
+          <td class="small muted">{{ parent.created_at[:10] }}</td>
+          <td class="small muted">{{ parent.last_seen_at[:16]|replace('T', ' ') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5"><div class="empty"><span class="empty-emoji">🔍</span>No parent accounts match that search.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-foot">
+    <span>{{ rows|length }} account{{ '' if rows|length == 1 else 's' }} shown</span>
+    <span class="tiny">Sign-in, profile creation and deletions are handled by Firebase and the mobile app. This page is read-only by design.</span>
+  </div>
+</section>
+{% endblock %}

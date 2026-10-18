@@ -1,0 +1,135 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Edit item' if mode == 'edit' else 'New item' }}{% endblock %}
+{% block heading %}{{ 'Edit catalogue item' if mode == 'edit' else 'New catalogue item' }}{% endblock %}
+{% block subheading %}Content shown to children by the recommender{% endblock %}
+{% block actions %}
+  <a class="btn btn-ghost btn-sm" href="/admin/catalogue">← Back to catalogue</a>
+{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="flash flash-error" role="alert"><span class="flash-dot"></span>{{ error }}</div>
+{% endif %}
+
+<form class="card" method="post"
+      action="{{ '/admin/catalogue/' ~ item.id ~ '/edit' if mode == 'edit' else '/admin/catalogue/new' }}">
+  <div class="card-head">
+    <h2>{{ 'Item details' if mode == 'edit' else 'Describe the item' }}</h2>
+    <label class="switch">
+      <input type="checkbox" name="active" {% if item.active %}checked{% endif %}>
+      <span class="small">Visible to children</span>
+    </label>
+  </div>
+
+  <div class="card-body stack">
+    <div class="form-grid">
+      <div class="field span-2">
+        <label for="title">Title *</label>
+        <input id="title" name="title" required maxlength="160" value="{{ item.title }}" placeholder="The Very Hungry Caterpillar">
+      </div>
+
+      <div class="field">
+        <label for="type">Media type *</label>
+        <select id="type" name="type">
+          <option value="book" {% if item.type == 'book' %}selected{% endif %}>Book</option>
+          <option value="video" {% if item.type == 'video' %}selected{% endif %}>Educational video</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="category">Category *</label>
+        <input id="category" name="category" required maxlength="60" list="category-options"
+               value="{{ item.category }}" placeholder="Science">
+        <datalist id="category-options">
+          {% for category in categories %}<option value="{{ category }}">{% endfor %}
+        </datalist>
+      </div>
+
+      <div class="field">
+        <label for="age_min">Minimum age *</label>
+        <input id="age_min" name="age_min" type="number" min="0" max="18" required value="{{ item.age_min }}">
+      </div>
+
+      <div class="field">
+        <label for="age_max">Maximum age *</label>
+        <input id="age_max" name="age_max" type="number" min="0" max="18" required value="{{ item.age_max }}">
+      </div>
+
+      <div class="field">
+        <label for="year">Publication year *</label>
+        <input id="year" name="year" type="number" min="1900" max="2100" required value="{{ item.year }}">
+      </div>
+
+      <div class="field">
+        <label for="publisher">Publisher / creator</label>
+        <input id="publisher" name="publisher" maxlength="120" value="{{ item.publisher }}" placeholder="Usborne">
+      </div>
+
+      <div class="field">
+        <label for="language">Language</label>
+        <input id="language" name="language" maxlength="40" value="{{ item.language or 'English' }}">
+      </div>
+
+      <div class="field">
+        <label for="popularity">Popularity score (0–100)</label>
+        <input id="popularity" name="popularity" type="number" min="0" max="100" value="{{ item.popularity }}">
+        <span class="hint">Used as a tie-breaker by the recommender.</span>
+      </div>
+
+      <div class="field">
+        <label for="cover_emoji">Cover emoji</label>
+        <input id="cover_emoji" name="cover_emoji" maxlength="8" value="{{ item.cover_emoji or '📘' }}">
+        <span class="hint">Shown as the thumbnail in both frontends.</span>
+      </div>
+
+      <div class="field span-2">
+        <label for="summary">Summary</label>
+        <textarea id="summary" name="summary" maxlength="600" placeholder="What is this book or video about?">{{ item.summary }}</textarea>
+      </div>
+
+      <div class="field span-2">
+        <label for="tags">Matching tags</label>
+        <input id="tags" name="tags" value="{{ item.tags|join(', ') if item.tags else '' }}"
+               placeholder="dinosaurs, fossils, t-rex">
+        <span class="hint">Comma separated. These drive the keyword matching and the “matched tags” explanation.</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Sensitivity categories</label>
+      <span class="hint">A parent who blocks one of these categories will never see the item.</span>
+      <div class="checkbox-grid">
+        {% for category in sensitivity_categories %}
+        <label class="check">
+          <input type="checkbox" name="sensitivity" value="{{ category }}"
+                 {% if category in item.sensitivity %}checked{% endif %}>
+          {{ category|capitalize }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="link_nlb">NLB Singapore link</label>
+        <input id="link_nlb" name="link_nlb" value="{{ item.external_links.get('nlb', '') if item.external_links else '' }}"
+               placeholder="https://catalogue.nlb.gov.sg/search?q=…">
+      </div>
+      <div class="field">
+        <label for="link_open_library">Open Library link</label>
+        <input id="link_open_library" name="link_open_library" value="{{ item.external_links.get('open_library', '') if item.external_links else '' }}"
+               placeholder="https://openlibrary.org/search?q=…">
+        <span class="hint">Leave both blank to auto-generate search links from the title.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-foot">
+    <span class="small muted">{{ 'Editing ' ~ item.id if mode == 'edit' else 'A new item id will be generated automatically.' }}</span>
+    <div class="row">
+      <a class="btn btn-ghost" href="/admin/catalogue">Cancel</a>
+      <button class="btn" type="submit">{{ 'Save changes' if mode == 'edit' else 'Create item' }}</button>
+    </div>
+  </div>
+</form>
+{% endblock %}

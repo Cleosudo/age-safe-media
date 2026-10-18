@@ -1,0 +1,21 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# dev mock API (not part of the deliverable)
+mock-api/.venv/
+mock-api/data/*.db
+mock-api/data/*.db-*
+mock-api/.env
+
+# node / expo
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/.env
+tools/node_modules/
+
+# editor
+.vscode/
+.idea/

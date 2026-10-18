@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dashboard{% endblock %} · Age-Safe Media</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+</head>
+<body>
+  <div class="nav-scrim" data-nav-close></div>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">🛡️</div>
+        <div class="brand-text">
+          <span class="brand-name">Age-Safe Media</span>
+          <span class="brand-sub">Admin Portal</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <span class="nav-label">Overview</span>
+        <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" href="/admin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
+          Dashboard
+        </a>
+
+        <span class="nav-label">Content</span>
+        <a class="nav-link {% if active_page == 'catalogue' %}active{% endif %}" href="/admin/catalogue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/></svg>
+          Catalogue
+        </a>
+        <a class="nav-link {% if active_page == 'users' %}active{% endif %}" href="/admin/users">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><circle cx="17.5" cy="9.5" r="2.4"/><path d="M16 14.6a5 5 0 0 1 5.2 4.4"/></svg>
+          Parents &amp; children
+        </a>
+
+        <span class="nav-label">Intelligence</span>
+        <a class="nav-link {% if active_page == 'models' %}active{% endif %}" href="/admin/models">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5l2.6-1.5M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="3.6"/></svg>
+          Model management
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">{{ (admin_email or 'A')[0]|upper }}</div>
+          <div>
+            <span>{{ admin_email or 'Administrator' }}</span>
+            <small>Signed in</small>
+          </div>
+        </div>
+        <form method="post" action="/admin/logout">
+          <button class="nav-link" type="submit" style="width:100%;background:none;border:0;cursor:pointer;font:inherit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/></svg>
+            Sign out
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="row">
+          <button class="menu-button" data-nav-toggle aria-label="Open navigation">☰</button>
+          <div>
+            <h1>{% block heading %}Dashboard{% endblock %}</h1>
+            <p>{% block subheading %}Catalogue, families and recommendation model health{% endblock %}</p>
+          </div>
+        </div>
+        <div class="topbar-actions">{% block actions %}{% endblock %}</div>
+      </header>
+
+      <main class="content">
+        {% if flash %}
+        <div class="flash" data-flash role="status">
+          <span class="flash-dot"></span>{{ flash }}
+        </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  <script src="{{ url_for('static', path='js/admin.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

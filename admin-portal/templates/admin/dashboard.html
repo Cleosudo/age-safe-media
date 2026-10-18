@@ -1,0 +1,151 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+{% block subheading %}A live view of families, catalogue health and recommendation quality{% endblock %}
+{% block actions %}
+  <a class="btn btn-ghost btn-sm" href="/admin/catalogue/new">＋ New item</a>
+  <a class="btn btn-sm" href="/admin/models">Model health</a>
+{% endblock %}
+
+{% block content %}
+<section class="grid grid-stats">
+  <article class="stat" style="--stat-tint: var(--mint-100)">
+    <div class="stat-emoji">👨‍👩‍👧</div>
+    <div class="stat-label">Parent accounts</div>
+    <div class="stat-value">{{ stats.parents }}</div>
+    <div class="stat-sub">{{ stats.children }} child profiles</div>
+  </article>
+  <article class="stat" style="--stat-tint: var(--sky-soft)">
+    <div class="stat-emoji">📚</div>
+    <div class="stat-label">Catalogue items</div>
+    <div class="stat-value">{{ stats.catalogue_items }}</div>
+    <div class="stat-sub">{{ stats.inactive_items }} hidden from children</div>
+  </article>
+  <article class="stat" style="--stat-tint: var(--peach-soft)">
+    <div class="stat-emoji">💬</div>
+    <div class="stat-label">Conversations</div>
+    <div class="stat-value">{{ stats.conversations }}</div>
+    <div class="stat-sub">{{ stats.messages }} messages exchanged</div>
+  </article>
+  <article class="stat" style="--stat-tint: var(--lemon)">
+    <div class="stat-emoji">💛</div>
+    <div class="stat-label">Saves &amp; reactions</div>
+    <div class="stat-value">{{ stats.favourites }}</div>
+    <div class="stat-sub">{{ stats.recommendations_served }} recommendations served</div>
+  </article>
+</section>
+
+<section class="grid grid-2">
+  <article class="card">
+    <div class="card-head">
+      <h2>Most searched topics</h2>
+      <span class="badge">{{ stats.searches }} searches</span>
+    </div>
+    <div class="card-body">
+      {% if stats.top_topics %}
+      <div class="bar-list">
+        {% for topic in stats.top_topics %}
+        <div class="bar-row">
+          <span class="label" title="{{ topic.topic }}">{{ topic.topic }}</span>
+          <div class="bar-track"><div class="bar-fill" style="width: {{ (topic.count / max_topic * 100)|round|int }}%"></div></div>
+          <span class="value">{{ topic.count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty"><span class="empty-emoji">🔍</span>No searches recorded yet.</div>
+      {% endif %}
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="card-head">
+      <h2>Active model</h2>
+      <a class="btn btn-ghost btn-sm" href="/admin/models">Manage</a>
+    </div>
+    <div class="card-body stack">
+      {% set model = models|selectattr('status', 'equalto', 'active')|first %}
+      {% if model %}
+        <div class="row-between">
+          <div>
+            <h3>{{ model.version }}</h3>
+            <p class="small muted">Activated {{ model.activated_at[:10] if model.activated_at else '—' }}</p>
+          </div>
+          <span class="badge badge-active">● Live</span>
+        </div>
+        <div class="metric-grid">
+          <div class="metric"><div class="metric-label">Precision@5</div><div class="metric-value">{{ '%.2f'|format(model.metrics.get('precision_at_5', 0)) }}</div></div>
+          <div class="metric"><div class="metric-label">Recall@10</div><div class="metric-value">{{ '%.2f'|format(model.metrics.get('recall_at_10', 0)) }}</div></div>
+          <div class="metric"><div class="metric-label">NDCG@10</div><div class="metric-value">{{ '%.2f'|format(model.metrics.get('ndcg_at_10', 0)) }}</div></div>
+          <div class="metric"><div class="metric-label">Coverage</div><div class="metric-value">{{ '%.2f'|format(model.metrics.get('coverage', 0)) }}</div></div>
+        </div>
+        <p class="small muted">{{ model.notes }}</p>
+      {% else %}
+        <div class="empty"><span class="empty-emoji">🤖</span>No model has been activated yet.</div>
+      {% endif %}
+    </div>
+  </article>
+</section>
+
+<section class="grid grid-2">
+  <article class="card">
+    <div class="card-head">
+      <h2>Newest families</h2>
+      <a class="btn btn-ghost btn-sm" href="/admin/users">All accounts</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Parent</th><th>Children</th><th>Joined</th></tr>
+        </thead>
+        <tbody>
+          {% for parent in parents %}
+          <tr>
+            <td>
+              <div class="cell-title">
+                <div class="cell-emoji">👤</div>
+                <div>
+                  <strong>{{ parent.display_name or parent.email.split('@')[0] }}</strong>
+                  <small>{{ parent.email }}</small>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="row wrap">
+                {% for child in parent.children %}
+                  <span class="chip">{{ child.avatar }} {{ child.name }} · {{ child.age }}</span>
+                {% else %}
+                  <span class="small muted">No profiles</span>
+                {% endfor %}
+              </div>
+            </td>
+            <td class="small muted">{{ parent.created_at[:10] }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3"><div class="empty"><span class="empty-emoji">🌱</span>No parent accounts yet.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="card-head"><h2>Catalogue by category</h2></div>
+    <div class="card-body">
+      {% if stats.top_categories %}
+      <div class="bar-list">
+        {% for row in stats.top_categories %}
+        <div class="bar-row">
+          <span class="label">{{ row.category }}</span>
+          <div class="bar-track"><div class="bar-fill peach" style="width: {{ (row.count / max_category * 100)|round|int }}%"></div></div>
+          <span class="value">{{ row.count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty"><span class="empty-emoji">📦</span>The catalogue is empty.</div>
+      {% endif %}
+    </div>
+  </article>
+</section>
+{% endblock %}
